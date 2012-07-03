@@ -1,54 +1,28 @@
 import os
 import os.path
 import re
-import sys
 from occ_stream_common import *
 from time import sleep
-import logging
 from datetime import timedelta
 from datetime import datetime
 
 OUTPUT_ROOT = '/home/public/media/occ-stream'
 OUTPUT_FILENAME = 'raw.flv'
+LOG_FILENAME = 'download.log'
 RECORD_TRIES = 30
 RECORD_INTERVAL = timedelta(minutes=2)
 RTMPDUMP_PATH = '/home/gabe/occ-stream/rtmpdump-2.3/rtmpdump'
 MIN_DURATION = timedelta(hours=1)
 
-# get the logger
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-class LoggerStream(object):
-  """
-  Fake file-like stream object that redirects writes to a logger instance.
-  Reference: http://www.electricmonk.nl/log/2011/08/14/redirect-stdout-and-stderr-to-a-logger-in-python/
-  """
-  def __init__(self, logger, log_level=logging.INFO):
-    self.logger = logger
-    self.log_level = log_level
-    self.linebuf = ''
- 
-  def write(self, buf):
-    for line in buf.rstrip().splitlines():
-      self.logger.log(self.log_level, line.rstrip())
-
 # create output directory
 output_directory = '%s/%s' % (OUTPUT_ROOT, compute_datetime_path_string())
-logger.info('creating output directory')
 if not os.path.exists(output_directory):
   os.makedirs(output_directory)
 
-# configure the logger
-logfile_path = '%s/download.log' % output_directory
-logger_handler = logging.FileHandler(logfile_path)
-logger_handler.setFormatter(logging.Formatter(
-  '%(asctime)s %(levelname)s %(message)s\r\n'
-))
-logger.addHandler(logger_handler)
- 
-sys.stdout = LoggerStream(logger, logging.INFO)
-sys.stderr = LoggerStream(logger, logging.ERROR)
+# get the logger
+logfile_path = '%s/%s' % (output_directory, LOG_FILENAME)
+logger = setup_logger(logfile_path)
+logging_context.register(logger, logfile_path)
 
 # compute output path
 output_file_path = '%s/%s' % (output_directory, OUTPUT_FILENAME)

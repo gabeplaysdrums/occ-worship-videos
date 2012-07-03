@@ -4,6 +4,9 @@ import re
 import sys
 from occ_stream_common import *
 
+logger = setup_logger()
+logging_context.register(logger)
+
 def print_usage():
   print 'python trim.py input ["start end" ...]\n'
 
@@ -30,5 +33,5 @@ for arg in sys.argv[2:]:
   temp_ffmpeg_cmd = '%s -ss %s -t %s %s' % (
     ffmpeg_cmd, start_hhmmss, delta_hhmmss, outfile
   )
-  os.system(temp_ffmpeg_cmd)
+  run_and_log(temp_ffmpeg_cmd)
   count = count + 1

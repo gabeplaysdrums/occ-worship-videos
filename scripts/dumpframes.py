@@ -2,6 +2,9 @@ import sys
 from occ_stream_common import *
 from datetime import timedelta
 
+logger = setup_logger()
+logging_context.register(logger)
+
 def print_usage():
   print 'python dumpframes.py input start end [step]\n'
 

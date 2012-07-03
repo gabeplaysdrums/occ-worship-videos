@@ -1,9 +1,64 @@
-import os
-import re
 from datetime import datetime
 from datetime import timedelta
 from subprocess import Popen
+import logging
+import os
+import re
 import shlex
+import sys
+
+def setup_logger(logfile_path=None, redirect_std=False):
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO)
+  
+  if logfile_path != None:
+    logger_handler = logging.FileHandler(logfile_path)
+    logger_handler.setFormatter(logging.Formatter(
+      '%(asctime)s %(levelname)s %(message)s\r\n'
+    ))
+    logger.addHandler(logger_handler)
+  
+  if redirect_std:
+
+    class LoggerStream(object):
+      """
+      Fake file-like stream object that redirects writes to a logger instance.
+      Reference: http://www.electricmonk.nl/log/2011/08/14/redirect-stdout-and-stderr-to-a-logger-in-python/
+      """
+      def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+        self.linebuf = ''
+     
+      def write(self, buf):
+        for line in buf.rstrip().splitlines():
+          self.logger.log(self.log_level, line.rstrip())
+
+    sys.stdout = LoggerStream(logger, logging.INFO)
+    sys.stderr = LoggerStream(logger, logging.ERROR)
+
+  return logger
+
+class __LoggingContext(object):
+
+  def __init__(self):
+    self.logger = None
+    self.logfile_path = None
+
+  def register(self, logger=None, logfile_path=None):
+    self.logger = logger
+    self.logfile_path = logfile_path
+
+  def get_logger(self):
+    if self.logger == None:
+      self.logger = setup_logger()
+    return self.logger
+
+  def get_logfile_path(self):
+    return self.logfile_path
+
+logging_context  = __LoggingContext()
+del __LoggingContext
 
 def hhmmss_to_seconds(hh, mm, ss):
   return int(ss) + 60 * int(mm) + 60 * 60 * int(hh)
@@ -39,12 +94,10 @@ def compute_datetime_path_string(now=None):
     now = datetime.now()
   return now.strftime('%Y%m%d-%H%M')
 
-logger = None
-logfile_path = None
-
 def run_and_log(cmd):
-  if logger != None:
-    logger.info('Running command: %s' % cmd)
+  logger = logging_context.get_logger()
+  logfile_path = logging_context.get_logfile_path()
+  logger.info('Running command: %s' % cmd)
   logfile = None
   p = None
   if logfile_path != None:
@@ -57,8 +110,7 @@ def run_and_log(cmd):
     logfile.write('\r\n')
     logfile.flush()
     logfile.close()
-  if logger != None:
-    logger.info('Finished running command.  Result: %d' % result)
+  logger.info('Finished running command.  Result: %d' % result)
   return result
 
 def dump_frames(
