@@ -4,15 +4,24 @@ from time import sleep
 from datetime import timedelta
 from datetime import datetime
 
-OUTPUT_ROOT = '/home/public/media/occ-stream'
 OUTPUT_FILENAME = 'raw.flv'
 LOG_FILENAME = 'download.log'
 RECORD_TRIES = 30
 RECORD_INTERVAL = timedelta(minutes=2)
 MIN_DURATION = timedelta(hours=1)
 
+def print_usage():
+  print 'usage: python download.py output_root\n'
+
+def print_usage_and_exit():
+  print_usage()
+  exit(1)
+
+if len(sys.argv) <= 1:
+  print_usage_and_exit()
+
 # create output directory
-output_directory = '%s/%s' % (OUTPUT_ROOT, compute_datetime_path_string())
+output_directory = '%s/%s' % (argv[1], compute_datetime_path_string())
 if not os.path.exists(output_directory):
   os.makedirs(output_directory)
 

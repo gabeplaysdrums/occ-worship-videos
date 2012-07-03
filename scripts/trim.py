@@ -8,7 +8,7 @@ logger = setup_logger()
 logging_context.register(logger)
 
 def print_usage():
-  print 'python trim.py input ["start end" ...]\n'
+  print 'usage: python trim.py input ["start end" ...]\n'
 
 def print_usage_and_exit():
   print_usage()

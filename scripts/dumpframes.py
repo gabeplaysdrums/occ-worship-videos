@@ -6,7 +6,7 @@ logger = setup_logger()
 logging_context.register(logger)
 
 def print_usage():
-  print 'python dumpframes.py input start end [step]\n'
+  print 'usage: python dumpframes.py input start end [step]\n'
 
 def print_usage_and_exit():
   print_usage()
