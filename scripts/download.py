@@ -1,6 +1,4 @@
-import os
 import os.path
-import re
 from occ_stream_common import *
 from time import sleep
 from datetime import timedelta
@@ -11,7 +9,6 @@ OUTPUT_FILENAME = 'raw.flv'
 LOG_FILENAME = 'download.log'
 RECORD_TRIES = 30
 RECORD_INTERVAL = timedelta(minutes=2)
-RTMPDUMP_PATH = '/home/gabe/occ-stream/rtmpdump-2.3/rtmpdump'
 MIN_DURATION = timedelta(hours=1)
 
 # create output directory
@@ -36,8 +33,8 @@ for tries_remaining in range(RECORD_TRIES, 0, -1):
     # record the stream
     start_time = datetime.now()
     command = (
-      '%s -v -y broadcast1 -r "rtmp://fss24.streamhoster.com/lv_occvideof1" -o %s -s "http://public.streamhoster.com/Resources/Flash/JWFLVMediaPlayer/mediaplayer.swf" -w 8ac08c568ab193b9e6d82ee9c0f6430a773f372a6afe6ef1ae735d58278430cd -x 50076' % (
-        RTMPDUMP_PATH, output_file_path
+      'rtmpdump -v -y broadcast1 -r "rtmp://fss24.streamhoster.com/lv_occvideof1" -o %s -s "http://public.streamhoster.com/Resources/Flash/JWFLVMediaPlayer/mediaplayer.swf" -w 8ac08c568ab193b9e6d82ee9c0f6430a773f372a6afe6ef1ae735d58278430cd -x 50076' % (
+        output_file_path
       )
     )
     result = run_and_log(command)
