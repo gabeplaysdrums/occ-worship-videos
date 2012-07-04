@@ -1,9 +1,12 @@
-import os.path
+from ConfigParser import ConfigParser
+from datetime import datetime
+from datetime import timedelta
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
 from occ_stream_common import *
 from time import sleep
-from datetime import timedelta
-from datetime import datetime
-from ConfigParser import ConfigParser
+import os.path
+import smtplib
 
 def print_usage():
   print 'usage: python download.py config_file\n'
@@ -31,6 +34,25 @@ logfile_path = '%s/%s' % (output_directory, config.get('log', 'filename'))
 logger = setup_logger(logfile_path)
 logging_context.register(logger, logfile_path)
 
+def send_mail(subject, body):
+  if config.has_section('mail'):
+    from_addr = config.get('mail', 'from')
+    to_addr = config.get('mail', 'to')
+    msg = MIMEMultipart()
+    msg['From'] = from_addr
+    msg['To'] = to_addr
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body))
+    server = smtplib.SMTP(
+      config.get('mail', 'host'), config.getint('mail', 'port')
+    )
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    server.login(from_addr, config.get('mail', 'password'))
+    server.sendmail(from_addr, to_addr, msg.as_string())
+    server.close()
+
 # compute output path
 output_file_path = '%s/%s' % (
   output_directory, config.get('recording', 'filename')
@@ -42,6 +64,15 @@ poll_interval = parse_timedelta(config.get('recording', 'poll_interval'))
 min_duration = parse_timedelta(config.get('recording', 'min_duration'))
 duration = None
 record_succeeded = False
+
+send_mail(
+  subject='OCC stream download started',
+  body="""
+    Started downloading the OCC media stream.  Output is saved to '%s'.
+  """ % (
+    output_file_path
+  )
+)
 
 for tries_remaining in range(poll_tries, 0, -1):
   try:
@@ -85,4 +116,14 @@ logger.info('Finished recording stream')
 logger.info('Dumping frames to assist with editing')
 dump_frames(input_file=output_file_path, end=duration)
 
+send_mail(
+  subject='OCC stream download finished',
+  body="""
+    Downloaded the OCC media stream successfully.  Output is saved to '%s'.
+  """ % (
+    output_file_path
+  )
+)
+
 logger.info('success!')
+
