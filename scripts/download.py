@@ -3,15 +3,10 @@ from occ_stream_common import *
 from time import sleep
 from datetime import timedelta
 from datetime import datetime
-
-OUTPUT_FILENAME = 'raw.flv'
-LOG_FILENAME = 'download.log'
-RECORD_TRIES = 30
-RECORD_INTERVAL = timedelta(minutes=2)
-MIN_DURATION = timedelta(hours=1)
+from ConfigParser import ConfigParser
 
 def print_usage():
-  print 'usage: python download.py output_root\n'
+  print 'usage: python download.py config_file\n'
 
 def print_usage_and_exit():
   print_usage()
@@ -20,24 +15,35 @@ def print_usage_and_exit():
 if len(sys.argv) <= 1:
   print_usage_and_exit()
 
+# read configuration file
+config = ConfigParser()
+config.read(sys.argv[1])
+
 # create output directory
-output_directory = '%s/%s' % (argv[1], compute_datetime_path_string())
+output_directory = '%s/%s' % (
+  config.get('general', 'root_directory'), compute_datetime_path_string()
+)
 if not os.path.exists(output_directory):
   os.makedirs(output_directory)
 
 # get the logger
-logfile_path = '%s/%s' % (output_directory, LOG_FILENAME)
+logfile_path = '%s/%s' % (output_directory, config.get('log', 'filename'))
 logger = setup_logger(logfile_path)
 logging_context.register(logger, logfile_path)
 
 # compute output path
-output_file_path = '%s/%s' % (output_directory, OUTPUT_FILENAME)
+output_file_path = '%s/%s' % (
+  output_directory, config.get('recording', 'filename')
+)
 logger.info('saving output to %s' % output_file_path)
 
-record_duration = None
+poll_tries = config.getint('recording', 'poll_tries')
+poll_interval = parse_timedelta(config.get('recording', 'poll_interval'))
+min_duration = parse_timedelta(config.get('recording', 'min_duration'))
+duration = None
 record_succeeded = False
 
-for tries_remaining in range(RECORD_TRIES, 0, -1):
+for tries_remaining in range(poll_tries, 0, -1):
   try:
     # record the stream
     start_time = datetime.now()
@@ -52,19 +58,19 @@ for tries_remaining in range(RECORD_TRIES, 0, -1):
     end_time = datetime.now()
     
     # ensure the duration matches the expected value
-    record_duration = (end_time - start_time)
-    logger.info('finished recording, duration: %s' % record_duration)
-    if (record_duration < MIN_DURATION):
+    duration = (end_time - start_time)
+    logger.info('finished recording, duration: %s' % duration)
+    if (duration < min_duration):
       raise Exception(
         'duration is less than the minimum value expected (%s)' % 
-        MIN_DURATION
+        min_duration
       )
   except Exception as error:
     logger.info('failed to record the stream: %s' % error)
     logger.info('trying again in %s (%d tries left) ...' % (
-      RECORD_INTERVAL, tries_remaining
+      poll_interval, tries_remaining
     ))
-    sleep(RECORD_INTERVAL.seconds)
+    sleep(poll_interval.seconds)
     continue
   record_succeeded = True
   break
@@ -77,6 +83,6 @@ if (not record_succeeded):
 logger.info('Finished recording stream')
 
 logger.info('Dumping frames to assist with editing')
-dump_frames(input_file=output_file_path, end=record_duration)
+dump_frames(input_file=output_file_path, end=duration)
 
 logger.info('success!')
