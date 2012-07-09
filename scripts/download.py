@@ -159,12 +159,12 @@ except Exception as error:
     subject=mail_subject,
     body="""
 <p>
-Failed to download the OCC live video stream.  Failed with error message '%s'.
+Failed to download the OCC live video stream with the following error message:
 </p>
-
+<blockquote style="font-weight: bold; color: red;">%s</blockquote>
 <p>
 Here is the log:
-<pre style="border-style: solid; border-width: 2px; border-color: gray;">
+<pre style="border-style: solid; border-width: 2px; border-color: gray; padding: 10px;">
 %s
 </pre>
 </p>
