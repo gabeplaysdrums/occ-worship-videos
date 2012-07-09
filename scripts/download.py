@@ -43,7 +43,7 @@ def send_mail(subject, body):
     msg['From'] = from_addr
     msg['To'] = to_addr
     msg['Subject'] = subject
-    msg.attach(MIMEText(body))
+    msg.attach(MIMEText(body, 'html'))
     server = smtplib.SMTP(
       config.get('mail', 'host'), config.getint('mail', 'port')
     )
@@ -70,10 +70,10 @@ mail_subject = 'OCC stream download %s' % output_directory_name
 send_mail(
   subject=mail_subject,
   body="""
-Started downloading the OCC media stream.  Output is saved to '%s'.
-""" % (
-    output_file_path
-  )
+<p>
+Started downloading the OCC live video stream.  You will receive a follow-up email when the download completes.
+</p>
+"""
 )
 
 try:
@@ -119,13 +119,33 @@ try:
   
   logger.info('Dumping frames to assist with editing')
   dump_frames(input_file=output_file_path, end=duration)
-  
+
   send_mail(
     subject=mail_subject,
     body="""
-Downloaded the OCC media stream successfully.  Output is saved to '%s'.
+<p>
+Downloaded the OCC live video stream successfully!
+</p>
+<p>
+  <table border="1" cellpadding="5">
+    <tr>
+      <td><b>Output file:</b></td>
+      <td>%s</td>
+    </tr>
+    <tr>
+      <td><b>Duration:</b></td>
+      <td>%s</td>
+    </tr>
+    <tr>
+      <td><b>Log file:</b></td>
+      <td>%s</td>
+    </tr>
+  </table>
+</p>
 """ % (
-      output_file_path
+      output_file_path,
+      duration,
+      logfile_path
     )
   )
   
@@ -138,12 +158,16 @@ except Exception as error:
   send_mail(
     subject=mail_subject,
     body="""
-Failed to download the OCC media stream.  Failed with error message '%s'
+<p>
+Failed to download the OCC live video stream.  Failed with error message '%s'.
+</p>
 
-Here is the log file:
-===============================================================================
+<p>
+Here is the log:
+<pre style="border-style: solid; border-width: 2px; border-color: gray;">
 %s
-===============================================================================
+</pre>
+</p>
 """ % (
       error, logfile.read()
     )
