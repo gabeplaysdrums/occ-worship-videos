@@ -63,6 +63,7 @@ logger.info('saving output to %s' % output_file_path)
 poll_tries = config.getint('recording', 'poll_tries')
 poll_interval = parse_timedelta(config.get('recording', 'poll_interval'))
 min_duration = parse_timedelta(config.get('recording', 'min_duration'))
+max_duration = parse_timedelta(config.get('recording', 'max_duration'))
 duration = None
 record_succeeded = False
 mail_subject = 'OCC stream download %s' % output_directory_name
@@ -87,8 +88,9 @@ try:
           output_file_path
         )
       )
-      result = run_and_log(command)
-      if (result != 0):
+      result = run_and_log(command, max_duration.total_seconds())
+      # timeout result (None) implies success (it usually means the stream was not taken down after the service ended)
+      if (result != None and result != 0):
         raise Exception('unexpected exit code: %d' % result)
       end_time = datetime.now()
       

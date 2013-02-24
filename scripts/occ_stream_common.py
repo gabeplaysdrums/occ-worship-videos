@@ -6,6 +6,7 @@ import os
 import re
 import shlex
 import sys
+import threading
 
 def setup_logger(logfile_path=None, redirect_std=False):
   logger = logging.getLogger()
@@ -94,23 +95,47 @@ def compute_datetime_path_string(now=None):
     now = datetime.now()
   return now.strftime('%Y%m%d-%H%M')
 
-def run_and_log(cmd):
+def run_and_log(cmd_string, timeout=30):
   logger = logging_context.get_logger()
   logfile_path = logging_context.get_logfile_path()
-  logger.info('Running command: %s' % cmd)
-  logfile = None
-  p = None
-  if logfile_path != None:
-    logfile = open(logfile_path, 'a')
-    p = Popen(shlex.split(cmd), stdout=logfile, stderr=logfile, universal_newlines=True)
-  else:
-    p = Popen(shlex.split(cmd), universal_newlines=True)
-  result = p.wait()
-  if logfile != None:
-    logfile.write('\r\n')
-    logfile.flush()
-    logfile.close()
-  logger.info('Finished running command.  Result: %d' % result)
+  logger.info('Running command: %s' % cmd_string)
+
+  class Command(object):
+    def __init__(self, cmd):
+      self.cmd = cmd
+      self.process = None
+  
+    def run(self, timeout):
+      def target():
+        logfile = None
+        if logfile_path != None:
+          logfile = open(logfile_path, 'a')
+          self.process = Popen(shlex.split(self.cmd), stdout=logfile, stderr=logfile, universal_newlines=True)
+        else:
+          self.process = Popen(shlex.split(self.cmd), universal_newlines=True)
+        result = self.process.wait()
+        if logfile != None:
+          logfile.write('\r\n')
+          logfile.flush()
+          logfile.close()
+  
+      thread = threading.Thread(target=target)
+      thread.start()
+
+      result = None
+      thread.join(timeout)
+      if thread.is_alive():
+        self.process.terminate()
+        thread.join()
+      else:
+        result = self.process.returncode
+
+      return result
+
+  the_command = Command(cmd_string)
+  result = the_command.run(timeout)
+
+  logger.info('Finished running command.  Result: %s' % result)
   return result
 
 def dump_frames(
