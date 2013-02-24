@@ -5,6 +5,7 @@ from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
 from occ_stream_common import *
 from time import sleep
+import os
 import os.path
 import smtplib
 
@@ -79,6 +80,8 @@ Started downloading the OCC live video stream.  You will receive a follow-up ema
 
 try:
 
+  short_video_count = 0
+
   for tries_remaining in range(poll_tries, 0, -1):
     try:
       # record the stream
@@ -98,6 +101,12 @@ try:
       duration = (end_time - start_time)
       logger.info('finished recording, duration: %s' % duration)
       if (duration < min_duration):
+        # rename the (valid) video file, so we don't overwrite it
+        os.rename(
+          output_file_path, 
+          '%s.%d' % (output_file_path, short_video_count)
+        )
+        short_video_count += 1
         raise Exception(
           'duration is less than the minimum value expected (%s)' % 
           min_duration
