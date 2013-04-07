@@ -80,6 +80,12 @@ Started downloading the OCC live video stream.  You will receive a follow-up ema
 
 try:
 
+  # log stream.js for diagnositc reasons
+  #TODO: we might be able to compose the video URL from this scxript, rather
+  # than hard-coding it
+  logger.info('Requesting http://www.occ.org/_js/stream.js?_=1365360362926 for diagnostics')
+  run_and_log('curl "http://www.occ.org/_js/stream.js?_=1365360362926" -H "Cookie: PHPSESSID=jvcsi4a8if39p9ub453lffor16; X-Mapping-elbhlnpj=598EF51A72E8FDF5A8CF6181180E5797; __utma=133793040.247792973.1360562815.1360562815.1365359500.2; __utmb=133793040.3.10.1365359500; __utmc=133793040; __utmz=133793040.1360562815.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)" -H "Accept-Encoding: gzip,deflate,sdch" -H "Host: www.occ.org" -H "Accept-Language: en-US,en;q=0.8" -H "User-Agent: Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1464.0 Safari/537.36" -H "Accept: text/javascript, application/javascript, */*" -H "Referer: http://www.occ.org/" -H "X-Requested-With: XMLHttpRequest" -H "Connection: keep-alive"')
+
   short_video_count = 0
 
   for tries_remaining in range(poll_tries, 0, -1):
@@ -87,7 +93,7 @@ try:
       # record the stream
       start_time = datetime.now()
       command = (
-        'rtmpdump -v -y broadcast1 -r "rtmp://fss24.streamhoster.com/lv_occvideof1" -o %s -s "http://public.streamhoster.com/Resources/Flash/JWFLVMediaPlayer/mediaplayer.swf" -w 8ac08c568ab193b9e6d82ee9c0f6430a773f372a6afe6ef1ae735d58278430cd -x 50076' % (
+        'rtmpdump -v -y broadcast1 -r "rtmp://fss28.streamhoster.com/lv_occvideof1" -o %s -s "http://public.streamhoster.com/Resources/Flash/JWFLVMediaPlayer/mediaplayer.swf" -w 8ac08c568ab193b9e6d82ee9c0f6430a773f372a6afe6ef1ae735d58278430cd -x 50076' % (
           output_file_path
         )
       )
